@@ -191,6 +191,87 @@
           );
         };
 
+        const RankingBoard = ({ teams }) => {
+          const teamsWithScores = teams.map(t => ({ ...t, total: calculateTotal(t) }));
+          const groupedByScore = teamsWithScores.reduce((acc, team) => { const score = team.total; if (!acc[score]) { acc[score] = []; } acc[score].push(team); return acc; }, {});
+          const sortedGroups = Object.keys(groupedByScore).sort((a, b) => parseFloat(b) - parseFloat(a)).map((score, index) => ({ rank: index + 1, score: parseFloat(score), teams: groupedByScore[score] }));
+          const top3Groups = sortedGroups.slice(0, 3);
+          const otherGroups = sortedGroups.slice(3);
+          const getRankConfig = (rank) => {
+            if (rank === 1) return { crown: true, colors: { circle: 'bg-gradient-to-br from-yellow-100 via-yellow-200 to-yellow-400 border-yellow-500 ring-4 ring-yellow-200/50', textRank: 'text-yellow-700', glow: 'bg-yellow-400', box: 'bg-gradient-to-b from-yellow-50 via-yellow-100 to-yellow-300 border-yellow-500', textScore: 'text-yellow-600', badgeBorder: 'border-yellow-200/50', badgeIconColor: 'text-yellow-500 fill-yellow-400', badgeText: 'text-yellow-800', badgeLabel: 'Champion' }, shimmer: 'shimmer-effect-gold' };
+            if (rank === 2) return { crown: false, colors: { circle: 'bg-gradient-to-br from-slate-100 via-slate-200 to-slate-400 border-slate-300', textRank: 'text-slate-700', glow: 'bg-slate-300', box: 'bg-gradient-to-b from-slate-50 via-slate-100 to-slate-300 border-slate-400', textScore: 'text-slate-700', badgeBorder: 'border-slate-200', badgeIconColor: 'text-slate-600', badgeText: 'text-slate-700', badgeLabel: 'Silver' }, shimmer: 'shimmer-effect-silver' };
+            return { crown: false, colors: { circle: 'bg-orange-50 border-orange-300', textRank: 'text-orange-800', glow: '', box: 'bg-gradient-to-t from-orange-50 to-white border-orange-300', textScore: 'text-orange-700', badgeBorder: 'border-orange-200', badgeIconColor: 'text-orange-600', badgeText: 'text-orange-400', badgeLabel: 'Bronze' }, shimmer: '' };
+          };
+
+          return (
+            <div className="animate-fadeIn p-4">
+              <div className="flex flex-col md:flex-row justify-center items-end gap-6 mb-12 min-h-[300px] mt-8">
+                {top3Groups[1] && (() => { const group = top3Groups[1]; const style = getRankConfig(group.rank); return (
+                    <div className="order-2 md:order-1 w-full md:w-1/3 flex flex-col items-center group">
+                      <div className="mb-2 relative">
+                         <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-xl z-10 relative ${style.colors.circle}`}><span className={`text-3xl font-black ${style.colors.textRank}`}>#{group.rank}</span></div>
+                         {style.colors.glow && <div className={`absolute inset-0 rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity animate-pulse ${style.colors.glow}`}></div>}
+                         {style.crown && <Crown className="w-10 h-10 text-yellow-500 absolute -top-8 left-1/2 transform -translate-x-1/2 drop-shadow-md z-20" />}
+                      </div>
+                      <div className={`w-full relative overflow-hidden border-t-4 rounded-t-xl p-6 text-center shadow-lg flex flex-col items-center min-h-[220px] transition transform group-hover:-translate-y-1 ${style.colors.box}`}>
+                         {style.shimmer && <div className={`absolute inset-0 pointer-events-none opacity-60 ${style.shimmer}`}></div>}
+                         <div className="flex flex-col gap-1 w-full mb-2 relative z-10">{group.teams.map(t => (<h3 key={t.id} className="text-3xl font-black text-slate-800 uppercase truncate leading-tight">{t.name}</h3>))}</div>
+                         <span className={`text-5xl font-black relative z-10 drop-shadow-sm ${style.colors.textScore}`}>{group.score}</span>
+                         <div className={`mt-3 flex gap-1 relative z-10 bg-white/60 px-3 py-1 rounded-full border backdrop-blur-sm shadow-sm ${style.colors.badgeBorder}`}>
+                            {style.crown ? <Star className={`w-4 h-4 ${style.colors.badgeIconColor}`} /> : <Medal className={`w-4 h-4 ${style.colors.badgeIconColor}`} />}
+                            <span className={`text-xs font-bold uppercase tracking-widest ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
+                         </div>
+                      </div>
+                    </div>
+                ); })()}
+                
+                {top3Groups[0] && (() => { const group = top3Groups[0]; const style = getRankConfig(group.rank); return (
+                    <div className="order-1 md:order-2 w-full md:w-1/3 flex flex-col items-center z-10 transform md:-translate-y-8 group">
+                      <div className="mb-4 relative animate-bounce-slow">
+                         {style.crown && <Crown className="w-14 h-14 text-yellow-500 absolute -top-16 left-1/2 transform -translate-x-1/2 drop-shadow-lg filter" style={{filter: 'drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))'}} />}
+                         <div className={`w-28 h-28 rounded-full border-4 flex items-center justify-center shadow-2xl ring-4 relative z-10 ${style.colors.circle}`}><span className={`text-5xl font-black drop-shadow-sm ${style.colors.textRank}`}>#{group.rank}</span></div>
+                         {style.colors.glow && <div className={`absolute inset-0 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity animate-pulse ${style.colors.glow}`}></div>}
+                      </div>
+                      <div className={`w-full relative overflow-hidden border-t-4 rounded-t-xl p-8 text-center shadow-2xl flex flex-col items-center min-h-[280px] transition transform group-hover:-translate-y-2 ${style.colors.box}`}>
+                         {style.shimmer && <div className={`absolute inset-0 pointer-events-none opacity-60 ${style.shimmer}`}></div>}
+                         <div className="flex flex-col gap-1 w-full mb-4 relative z-10">{group.teams.map(t => (<h3 key={t.id} className="text-5xl md:text-6xl font-black text-gray-900 uppercase tracking-wide truncate leading-tight filter drop-shadow-sm">{t.name}</h3>))}</div>
+                         <span className={`text-8xl font-black drop-shadow-md relative z-10 my-2 ${style.colors.textScore}`}>{group.score}</span>
+                         <div className={`mt-4 flex gap-2 relative z-10 bg-white/30 px-4 py-2 rounded-full border backdrop-blur-sm ${style.colors.badgeBorder}`}>
+                            <Star className={`w-6 h-6 animate-spin-slow ${style.colors.badgeIconColor}`} />
+                            <span className={`text-sm font-bold uppercase tracking-widest ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
+                            <Star className={`w-6 h-6 animate-spin-slow-reverse ${style.colors.badgeIconColor}`} />
+                         </div>
+                      </div>
+                    </div>
+                ); })()}
+
+                {top3Groups[2] && (() => { const group = top3Groups[2]; const style = getRankConfig(group.rank); return (
+                    <div className="order-3 w-full md:w-1/3 flex flex-col items-center opacity-90 hover:opacity-100 transition">
+                      <div className="mb-2 relative">
+                         <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-lg ${style.colors.circle}`}><span className={`text-2xl font-black ${style.colors.textRank}`}>#{group.rank}</span></div>
+                      </div>
+                      <div className={`w-full bg-gradient-to-t border-t-4 rounded-t-xl p-6 text-center shadow-md flex flex-col items-center min-h-[200px] ${style.colors.box}`}>
+                         <div className="flex flex-col gap-1 w-full mb-2">{group.teams.map(t => (<h3 key={t.id} className="text-2xl font-bold text-gray-800 truncate">{t.name}</h3>))}</div>
+                         <span className={`text-4xl font-black ${style.colors.textScore}`}>{group.score}</span>
+                         <span className={`text-xs font-bold uppercase mt-2 px-2 py-0.5 rounded bg-white/50 ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
+                      </div>
+                    </div>
+                ); })()}
+              </div>
+
+              <div className="space-y-3 max-w-3xl mx-auto">
+                 {otherGroups.map((group, index) => (
+                   <div key={group.rank} className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 transition">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 mr-4 text-sm flex-shrink-0">#{group.rank}</div>
+                      <div className="flex-1 flex flex-col">{group.teams.map(t => (<h4 key={t.id} className="text-xl font-bold text-gray-700">{t.name}</h4>))}</div>
+                      <div className="text-2xl font-bold text-gray-500">{group.score} <span className="text-sm font-normal text-gray-400">đ</span></div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+          );
+        };
+
         const OfflineApp = () => {
             const [teams, setTeams] = useState(initialOfflineTeams);
             const [activeTab, setActiveTab] = useState('scoring');
