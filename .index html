@@ -1,533 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, Zap, MessageCircle, AlertCircle, ShieldCheck, RefreshCw, Award, Calculator, Eye, Users, Rocket, ThumbsDown, List, Grid, Crown, Star, Medal, Download, X, Save, Edit2, Check, Plus, Trash2 } from 'lucide-react';
 
-// --- HELPER FUNCTION: Tính điểm ---
-const calculateTotal = (team) => {
-  const parseScore = (value) => {
-    if (value === '' || value === null || value === undefined) return 0;
-    const standardizedValue = String(value).replace(',', '.');
-    return parseFloat(standardizedValue) || 0;
-  };
-
-  let total = parseScore(team.round1Score); // Điểm vòng 1
-  
-  // Điểm vòng 2
-  total += parseScore(team.accuracy);
-  if (team.presentation) total += 10;
-  if (team.creativity) total += 10;
-  total += team.speedBonus;
-
-  // Điểm vòng 3
-  total += team.critiqueScore;
-  
-  return Math.round(total * 100) / 100;
-};
-
-// --- COMPONENT CON: THẺ NHẬP ĐIỂM ---
-const ScoringCard = ({ team, updateTeam, addCritiquePoints, handleDecimalInput, onDeleteRequest }) => {
-  const total = calculateTotal(team);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(team.name);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    setNameInput(team.name);
-  }, [team.name]);
-
-  useEffect(() => {
-    if (isEditingName && inputRef.current) {
-        inputRef.current.focus();
-    }
-  }, [isEditingName]);
-
-  const handleSaveName = () => {
-    if (nameInput.trim()) {
-        updateTeam(team.id, 'name', nameInput);
-    } else {
-        setNameInput(team.name); // Revert if empty
-    }
-    setIsEditingName(false);
-  };
-
-  const handleKeyDown = (e) => {
-      if (e.key === 'Enter') handleSaveName();
-      if (e.key === 'Escape') {
-          setNameInput(team.name);
-          setIsEditingName(false);
-      }
-  };
-  
-  return (
-    <div className="relative bg-white border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden flex flex-col h-full transform transition hover:-translate-y-1 hover:shadow-xl group/card">
-      <div className="p-4 bg-gray-800 text-white flex justify-between items-center relative">
-        <div className="flex-1 mr-2 relative z-10 overflow-hidden">
-            {isEditingName ? (
-                <div className="flex items-center gap-1">
-                    <input 
-                        ref={inputRef}
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        onBlur={handleSaveName}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-gray-700 text-white font-bold text-xl px-2 py-1 rounded outline-none border border-blue-400"
-                    />
-                    <button onClick={handleSaveName} className="p-1 hover:bg-green-600 rounded text-green-400 hover:text-white transition"><Check className="w-5 h-5" /></button>
-                </div>
-            ) : (
-                <div className="flex items-center gap-2 group/title">
-                    <h2 className="text-2xl font-black tracking-wide truncate" title={team.name}>{team.name}</h2>
-                    <button 
-                        onClick={() => setIsEditingName(true)} 
-                        className="opacity-0 group-hover/title:opacity-100 focus:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition"
-                        title="Đổi tên"
-                    >
-                        <Edit2 className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className="block text-[10px] text-gray-300 uppercase font-bold tracking-wider">Tổng</span>
-            <span className="text-3xl font-bold text-yellow-400">{total}</span>
-          </div>
-          {/* Nút Xoá Nhóm - Gọi hàm request từ cha */}
-          <button 
-            onClick={() => onDeleteRequest(team)}
-            className="bg-red-500/20 hover:bg-red-600 text-red-400 hover:text-white p-1.5 rounded transition"
-            title="Xoá nhóm này"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-2 space-y-3 bg-gray-50">
-        {/* --- VÒNG 1 --- */}
-        <div className="bg-indigo-50 rounded-lg border-l-4 border-indigo-500 shadow-sm overflow-hidden">
-           <div className="bg-indigo-100 px-3 py-2 flex justify-between items-center border-b border-indigo-200">
-              <h3 className="text-sm font-bold text-indigo-800 uppercase flex items-center gap-2">
-                <Users className="w-4 h-4" /> Vòng 1: Khởi động
-              </h3>
-           </div>
-           <div className="p-3 flex items-center justify-between">
-              <label className="text-sm font-semibold text-indigo-700">Điểm số:</label>
-              <input 
-                type="text" 
-                inputMode="decimal"
-                value={team.round1Score}
-                onChange={(e) => handleDecimalInput(team.id, 'round1Score', e.target.value)}
-                onFocus={(e) => e.target.select()}
-                className="w-24 p-1 text-center border-b-2 border-indigo-400 font-bold text-2xl text-indigo-600 bg-transparent focus:outline-none focus:border-indigo-700 transition"
-                placeholder="0,0"
-              />
-           </div>
-        </div>
-
-        {/* --- VÒNG 2 --- */}
-        <div className="bg-cyan-50 rounded-lg border-l-4 border-cyan-500 shadow-sm overflow-hidden">
-          <div className="bg-cyan-100 px-3 py-2 flex justify-between items-center border-b border-cyan-200">
-             <h3 className="text-sm font-bold text-cyan-800 uppercase flex items-center gap-2">
-               <Rocket className="w-4 h-4" /> Vòng 2: Tăng tốc
-             </h3>
-          </div>
-          <div className="p-3 space-y-3">
-            <div className="bg-white/60 p-2 rounded border border-cyan-100">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-cyan-700 uppercase flex items-center gap-1">
-                  <Calculator className="w-3 h-3" /> Chính xác (Max 40)
-                </label>
-                <input 
-                  type="text" 
-                  inputMode="decimal"
-                  value={team.accuracy}
-                  onChange={(e) => handleDecimalInput(team.id, 'accuracy', e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="w-16 p-1 text-center border rounded font-bold text-cyan-800 focus:ring-1 focus:ring-cyan-500"
-                  placeholder="0,0"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <label className={`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none ${team.presentation ? 'bg-green-500 text-white border-green-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
-                  <input type="checkbox" className="hidden" checked={team.presentation} onChange={(e) => updateTeam(team.id, 'presentation', e.target.checked)} />
-                  Trình bày (+10)
-                </label>
-                <label className={`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none ${team.creativity ? 'bg-purple-500 text-white border-purple-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
-                  <input type="checkbox" className="hidden" checked={team.creativity} onChange={(e) => updateTeam(team.id, 'creativity', e.target.checked)} />
-                  Sáng tạo (+10)
-                </label>
-              </div>
-            </div>
-            <div className="bg-white/60 p-2 rounded border border-cyan-100">
-              <label className="text-xs font-bold text-cyan-700 uppercase block mb-1 flex items-center gap-1">
-                <Zap className="w-3 h-3" /> Điểm Tốc Độ
-              </label>
-              <div className="flex justify-between gap-1">
-                {[
-                  { val: 10, label: '🥇 10đ', color: 'bg-yellow-400 border-yellow-500' },
-                  { val: 5, label: '🥈 5đ', color: 'bg-gray-400 border-gray-500' },
-                  { val: 3, label: '🥉 3đ', color: 'bg-orange-400 border-orange-500' },
-                  { val: 0, label: '0', color: 'bg-white text-gray-400 border-gray-200' }
-                ].map((opt) => (
-                  <button
-                    key={opt.val}
-                    onClick={() => updateTeam(team.id, 'speedBonus', opt.val)}
-                    className={`flex-1 py-1 rounded text-[10px] font-bold transition border-b-2 active:border-b-0 active:translate-y-[2px] ${team.speedBonus === opt.val ? `${opt.color} text-white shadow-md` : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-200'}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- VÒNG 3 --- */}
-        <div className="bg-rose-50 rounded-lg border-l-4 border-rose-500 shadow-sm overflow-hidden">
-          <div className="bg-rose-100 px-3 py-2 flex justify-between items-center border-b border-rose-200">
-             <h3 className="text-sm font-bold text-rose-800 uppercase flex items-center gap-2">
-               <MessageCircle className="w-4 h-4" /> Vòng 3: Phản biện
-             </h3>
-             <div className="bg-white px-2 py-0.5 rounded-full border border-rose-200 shadow-sm">
-               <span className="text-xs font-bold text-rose-600">{team.critiqueScore > 0 ? '+' : ''}{team.critiqueScore}</span>
-             </div>
-          </div>
-          <div className="p-3 grid grid-cols-2 gap-2">
-            <button onClick={() => addCritiquePoints(team.id, 10)} className="flex items-center justify-between px-3 py-2 bg-white border border-rose-200 rounded hover:bg-rose-100 hover:border-rose-300 transition active:scale-95 group shadow-sm">
-              <div className="flex flex-col items-start"><span className="text-[10px] font-bold text-gray-600 uppercase">Soi lỗi</span><Eye className="w-4 h-4 text-rose-500" /></div><span className="text-sm font-black text-rose-600">+10</span>
-            </button>
-            <button onClick={() => addCritiquePoints(team.id, 5)} className="flex items-center justify-between px-3 py-2 bg-white border border-blue-200 rounded hover:bg-blue-50 hover:border-blue-300 transition active:scale-95 group shadow-sm">
-              <div className="flex flex-col items-start"><span className="text-[10px] font-bold text-gray-600 uppercase">Hỏi hay</span><AlertCircle className="w-4 h-4 text-blue-500" /></div><span className="text-sm font-black text-blue-600">+5</span>
-            </button>
-            <button onClick={() => addCritiquePoints(team.id, 5)} className="flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded hover:bg-green-50 hover:border-green-300 transition active:scale-95 group shadow-sm">
-              <div className="flex flex-col items-start"><span className="text-[10px] font-bold text-gray-600 uppercase">Bảo vệ</span><ShieldCheck className="w-4 h-4 text-green-500" /></div><span className="text-sm font-black text-green-600">+5</span>
-            </button>
-            <button onClick={() => addCritiquePoints(team.id, -5)} className="flex items-center justify-between px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 hover:border-gray-400 transition active:scale-95 group shadow-sm">
-              <div className="flex flex-col items-start"><span className="text-[10px] font-bold text-gray-600 uppercase">Phạt</span><ThumbsDown className="w-4 h-4 text-gray-500" /></div><span className="text-sm font-black text-gray-600">-5</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- COMPONENT CON: BẢNG XẾP HẠNG ---
-const RankingBoard = ({ teams }) => {
-  // 1. Tính tổng điểm
-  const teamsWithScores = teams.map(t => ({ ...t, total: calculateTotal(t) }));
-  
-  // 2. Gom nhóm theo điểm số (Grouping)
-  const groupedByScore = teamsWithScores.reduce((acc, team) => {
-    const score = team.total;
-    if (!acc[score]) {
-      acc[score] = [];
-    }
-    acc[score].push(team);
-    return acc;
-  }, {});
-
-  // 3. Chuyển thành mảng và sắp xếp giảm dần
-  const sortedGroups = Object.keys(groupedByScore)
-    .sort((a, b) => parseFloat(b) - parseFloat(a)) // Sắp xếp điểm cao -> thấp
-    .map((score, index) => ({
-      rank: index + 1,
-      score: parseFloat(score),
-      teams: groupedByScore[score] // Danh sách các đội cùng điểm
-    }));
-
-  const top3Groups = sortedGroups.slice(0, 3);
-  const otherGroups = sortedGroups.slice(3);
-
-  // Helper để lấy style dựa trên HẠNG (Rank) thực tế
-  const getRankConfig = (rank) => {
-    if (rank === 1) return {
-      crown: true,
-      colors: {
-        circle: 'bg-gradient-to-br from-yellow-100 via-yellow-200 to-yellow-400 border-yellow-500 ring-4 ring-yellow-200/50',
-        textRank: 'text-yellow-700',
-        glow: 'bg-yellow-400',
-        box: 'bg-gradient-to-b from-yellow-50 via-yellow-100 to-yellow-300 border-yellow-500',
-        textScore: 'text-yellow-600',
-        badgeBorder: 'border-yellow-200/50',
-        badgeIconColor: 'text-yellow-500 fill-yellow-400',
-        badgeText: 'text-yellow-800',
-        badgeLabel: 'Champion'
-      },
-      shimmer: 'shimmer-effect-gold'
-    };
-    if (rank === 2) return {
-      crown: false,
-      colors: {
-        circle: 'bg-gradient-to-br from-slate-100 via-slate-200 to-slate-400 border-slate-300',
-        textRank: 'text-slate-700',
-        glow: 'bg-slate-300',
-        box: 'bg-gradient-to-b from-slate-50 via-slate-100 to-slate-300 border-slate-400',
-        textScore: 'text-slate-700',
-        badgeBorder: 'border-slate-200',
-        badgeIconColor: 'text-slate-600',
-        badgeText: 'text-slate-700',
-        badgeLabel: 'Silver'
-      },
-      shimmer: 'shimmer-effect-silver'
-    };
-    // Default / Rank 3+
-    return {
-      crown: false,
-      colors: {
-        circle: 'bg-orange-50 border-orange-300',
-        textRank: 'text-orange-800',
-        glow: '',
-        box: 'bg-gradient-to-t from-orange-50 to-white border-orange-300',
-        textScore: 'text-orange-700',
-        badgeBorder: 'border-orange-200',
-        badgeIconColor: 'text-orange-600',
-        badgeText: 'text-orange-400',
-        badgeLabel: 'Bronze'
-      },
-      shimmer: ''
-    };
-  };
-
-  return (
-    <div className="animate-fadeIn p-4">
-      <div className="flex flex-col md:flex-row justify-center items-end gap-6 mb-12 min-h-[300px] mt-8">
-        
-        {/* VỊ TRÍ BÊN TRÁI (Thường là Hạng 2) */}
-        {top3Groups[1] && (() => {
-          const group = top3Groups[1];
-          const style = getRankConfig(group.rank);
-          return (
-            <div className="order-2 md:order-1 w-full md:w-1/3 flex flex-col items-center group">
-              <div className="mb-2 relative">
-                 <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-xl z-10 relative ${style.colors.circle}`}>
-                    <span className={`text-3xl font-black ${style.colors.textRank}`}>#{group.rank}</span>
-                 </div>
-                 {style.colors.glow && <div className={`absolute inset-0 rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity animate-pulse ${style.colors.glow}`}></div>}
-                 {style.crown && <Crown className="w-10 h-10 text-yellow-500 absolute -top-8 left-1/2 transform -translate-x-1/2 drop-shadow-md z-20" />}
-              </div>
-              
-              <div className={`w-full relative overflow-hidden border-t-4 rounded-t-xl p-6 text-center shadow-lg flex flex-col items-center min-h-[220px] transition transform group-hover:-translate-y-1 ${style.colors.box}`}>
-                 {style.shimmer && <div className={`absolute inset-0 pointer-events-none opacity-60 ${style.shimmer}`}></div>}
-                 
-                 {/* Render danh sách tên các đội */}
-                 <div className="flex flex-col gap-1 w-full mb-2 relative z-10">
-                    {group.teams.map(t => (
-                        <h3 key={t.id} className="text-3xl font-black text-slate-800 uppercase truncate leading-tight">
-                            {t.name}
-                        </h3>
-                    ))}
-                 </div>
-
-                 <span className={`text-5xl font-black relative z-10 drop-shadow-sm ${style.colors.textScore}`}>{group.score}</span>
-                 
-                 <div className={`mt-3 flex gap-1 relative z-10 bg-white/60 px-3 py-1 rounded-full border backdrop-blur-sm shadow-sm ${style.colors.badgeBorder}`}>
-                    {style.crown ? <Star className={`w-4 h-4 ${style.colors.badgeIconColor}`} /> : <Medal className={`w-4 h-4 ${style.colors.badgeIconColor}`} />}
-                    <span className={`text-xs font-bold uppercase tracking-widest ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
-                 </div>
-              </div>
-            </div>
-          );
-        })()}
-        
-        {/* VỊ TRÍ GIỮA (Thường là Hạng 1) */}
-        {top3Groups[0] && (() => {
-          const group = top3Groups[0];
-          const style = getRankConfig(group.rank);
-          return (
-            <div className="order-1 md:order-2 w-full md:w-1/3 flex flex-col items-center z-10 transform md:-translate-y-8 group">
-              <div className="mb-4 relative animate-bounce-slow">
-                 {style.crown && <Crown className="w-14 h-14 text-yellow-500 absolute -top-16 left-1/2 transform -translate-x-1/2 drop-shadow-lg filter" style={{filter: 'drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))'}} />}
-                 <div className={`w-28 h-28 rounded-full border-4 flex items-center justify-center shadow-2xl ring-4 relative z-10 ${style.colors.circle}`}>
-                    <span className={`text-5xl font-black drop-shadow-sm ${style.colors.textRank}`}>#{group.rank}</span>
-                 </div>
-                 {style.colors.glow && <div className={`absolute inset-0 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity animate-pulse ${style.colors.glow}`}></div>}
-              </div>
-
-              <div className={`w-full relative overflow-hidden border-t-4 rounded-t-xl p-8 text-center shadow-2xl flex flex-col items-center min-h-[280px] transition transform group-hover:-translate-y-2 ${style.colors.box}`}>
-                 {style.shimmer && <div className={`absolute inset-0 pointer-events-none opacity-60 ${style.shimmer}`}></div>}
-                 
-                 {/* Render danh sách tên các đội */}
-                 <div className="flex flex-col gap-1 w-full mb-4 relative z-10">
-                    {group.teams.map(t => (
-                        <h3 key={t.id} className="text-5xl md:text-6xl font-black text-gray-900 uppercase tracking-wide truncate leading-tight filter drop-shadow-sm">
-                            {t.name}
-                        </h3>
-                    ))}
-                 </div>
-
-                 <span className={`text-8xl font-black drop-shadow-md relative z-10 my-2 ${style.colors.textScore}`}>{group.score}</span>
-                 
-                 <div className={`mt-4 flex gap-2 relative z-10 bg-white/30 px-4 py-2 rounded-full border backdrop-blur-sm ${style.colors.badgeBorder}`}>
-                    <Star className={`w-6 h-6 animate-spin-slow ${style.colors.badgeIconColor}`} />
-                    <span className={`text-sm font-bold uppercase tracking-widest ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
-                    <Star className={`w-6 h-6 animate-spin-slow-reverse ${style.colors.badgeIconColor}`} />
-                 </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* VỊ TRÍ BÊN PHẢI (Thường là Hạng 3) */}
-        {top3Groups[2] && (() => {
-          const group = top3Groups[2];
-          const style = getRankConfig(group.rank);
-          return (
-            <div className="order-3 w-full md:w-1/3 flex flex-col items-center opacity-90 hover:opacity-100 transition">
-              <div className="mb-2 relative">
-                 <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-lg ${style.colors.circle}`}>
-                    <span className={`text-2xl font-black ${style.colors.textRank}`}>#{group.rank}</span>
-                 </div>
-              </div>
-              <div className={`w-full bg-gradient-to-t border-t-4 rounded-t-xl p-6 text-center shadow-md flex flex-col items-center min-h-[200px] ${style.colors.box}`}>
-                 
-                 {/* Render danh sách tên các đội */}
-                 <div className="flex flex-col gap-1 w-full mb-2">
-                    {group.teams.map(t => (
-                        <h3 key={t.id} className="text-2xl font-bold text-gray-800 truncate">
-                            {t.name}
-                        </h3>
-                    ))}
-                 </div>
-
-                 <span className={`text-4xl font-black ${style.colors.textScore}`}>{group.score}</span>
-                 <span className={`text-xs font-bold uppercase mt-2 px-2 py-0.5 rounded bg-white/50 ${style.colors.badgeText}`}>{style.colors.badgeLabel}</span>
-              </div>
-            </div>
-          );
-        })()}
-      </div>
-
-      <div className="space-y-3 max-w-3xl mx-auto">
-         {otherGroups.map((group, index) => (
-           <div key={group.rank} className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 transition">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 mr-4 text-sm flex-shrink-0">#{group.rank}</div>
-              <div className="flex-1 flex flex-col">{group.teams.map(t => (<h4 key={t.id} className="text-xl font-bold text-gray-700">{t.name}</h4>))}</div>
-              <div className="text-2xl font-bold text-gray-500">{group.score} <span className="text-sm font-normal text-gray-400">đ</span></div>
-           </div>
-         ))}
-      </div>
-    </div>
-  );
-};
-
-// --- COMPONENT CHÍNH ---
-const Scoreboard = () => {
-  // --- STATE QUẢN LÝ DỮ LIỆU ---
-  const initialTeams = Array.from({ length: 4 }, (_, i) => ({
-    id: i + 1,
-    name: `Nhóm ${i + 1}`,
-    round1Score: '0,0',
-    accuracy: '0,0',
-    presentation: false,
-    creativity: false,
-    speedBonus: 0,
-    critiqueScore: 0,
-  }));
-
-  const [teams, setTeams] = useState(initialTeams);
-  const [activeTab, setActiveTab] = useState('scoring');
-  
-  // State quản lý Modal
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [teamToDelete, setTeamToDelete] = useState(null); // State lưu nhóm cần xoá
-
-  // State mới: Tiêu đề và Subtitle có thể chỉnh sửa
-  const [appTitle, setAppTitle] = useState("Đường Đua 12A2");
-  const [appSubtitle, setAppSubtitle] = useState("Nguyễn Trường Sinh");
-  const [isEditingHeader, setIsEditingHeader] = useState(false);
-
-  const updateTeam = (id, field, value) => {
-    setTeams(teams.map(team => 
-      team.id === id ? { ...team, [field]: value } : team
-    ));
-  };
-
-  const addTeam = () => {
-    const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1;
-    const newTeam = {
-      id: newId,
-      name: `Nhóm ${newId}`,
-      round1Score: '0,0',
-      accuracy: '0,0',
-      presentation: false,
-      creativity: false,
-      speedBonus: 0,
-      critiqueScore: 0,
-    };
-    setTeams([...teams, newTeam]);
-  };
-  
-  // LOGIC XOÁ NHÓM MỚI (DÙNG MODAL)
-  const handleDeleteRequest = (team) => {
-      setTeamToDelete(team);
-  };
-
-  const confirmDeleteTeam = () => {
-      if (teamToDelete) {
-          setTeams(teams.filter(t => t.id !== teamToDelete.id));
-          setTeamToDelete(null);
-      }
-  };
-
-  const cancelDeleteTeam = () => {
-      setTeamToDelete(null);
-  };
-
-  const addCritiquePoints = (id, amount) => {
-    setTeams(teams.map(team => 
-      team.id === id ? { ...team, critiqueScore: team.critiqueScore + amount } : team
-    ));
-  };
-
-  // Logic Reset
-  const handleResetRequest = () => {
-    setShowResetConfirm(true);
-  };
-
-  const confirmReset = () => {
-    setTeams(initialTeams);
-    setShowResetConfirm(false);
-  };
-
-  const cancelReset = () => {
-    setShowResetConfirm(false);
-  };
-
-  const handleDecimalInput = (id, field, value) => {
-    let formattedValue = value.replace(/\./g, ',');
-    if (/^\d*,?\d*$/.test(formattedValue)) {
-      updateTeam(id, field, formattedValue);
-    }
-  };
-
-  // --- LOGIC XUẤT HTML ---
-  const exportOfflineHTML = () => {
-    const currentData = JSON.stringify(teams);
-    const currentTitle = JSON.stringify(appTitle);
-    const currentSubtitle = JSON.stringify(appSubtitle);
-    
-    // --- TEMPLATE STRING CHỨA TOÀN BỘ LOGIC APP ---
-    // Update logic xoá nhóm trong file Offline HTML (sử dụng window.confirm cho đơn giản vì chạy trên browser thật)
-    
-    const htmlContent = `
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${appTitle} - Web Export</title>
+    <title>Đường Đua 12A2 - Web Export</title>
     
     <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <!-- Babel để biên dịch JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"><\/script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lucide Icons UMD build -->
-    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"><\/script>
+    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 
     <style>
       body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
@@ -563,7 +51,7 @@ const Scoreboard = () => {
        styleSheet.innerText = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
        document.head.appendChild(styleSheet);
        setTimeout(() => { const msg = document.getElementById('timeout-msg'); if(msg) msg.style.display = 'block'; }, 5000);
-    <\/script>
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -580,13 +68,13 @@ const Scoreboard = () => {
                 return () => clearInterval(interval);
             }, [name]);
             if (error) return <span style={{fontSize: '10px', color: 'red'}}>{name}</span>;
-            if (!iconData) return <span style={{width: size, height: size, display: 'inline-block', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '4px'}} className={\`animate-pulse \${className}\`}></span>;
+            if (!iconData) return <span style={{width: size, height: size, display: 'inline-block', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '4px'}} className={`animate-pulse ${className}`}></span>;
             const [tag, attrs, children] = iconData;
             const createSvgElement = (elementData, index) => {
                 const [elemTag, elemAttrs, elemChildren] = elementData;
                 return React.createElement(elemTag, { ...elemAttrs, key: index }, elemChildren ? elemChildren.map((child, i) => createSvgElement(child, i)) : null);
             };
-            return React.createElement("svg", { ...attrs, width: size, height: size, stroke: color, className: \`lucide lucide-\${name.toLowerCase()} \${className}\`, ...props }, children.map((child, i) => createSvgElement(child, i)));
+            return React.createElement("svg", { ...attrs, width: size, height: size, stroke: color, className: `lucide lucide-${name.toLowerCase()} ${className}`, ...props }, children.map((child, i) => createSvgElement(child, i)));
         };
         const createIconComponent = (name) => (props) => <DynamicIcon name={name} {...props} />;
         
@@ -598,9 +86,9 @@ const Scoreboard = () => {
         const Edit2 = createIconComponent("Edit2"); const Check = createIconComponent("Check"); const Plus = createIconComponent("Plus"); const Trash2 = createIconComponent("Trash2");
 
         // --- 2. SHARED LOGIC ---
-        const initialOfflineTeams = ${currentData};
-        const initialOfflineTitle = ${currentTitle};
-        const initialOfflineSubtitle = ${currentSubtitle};
+        const initialOfflineTeams = [{"id":1,"name":"Nhóm 1","round1Score":"0,0","accuracy":"0,0","presentation":false,"creativity":false,"speedBonus":0,"critiqueScore":0},{"id":2,"name":"Nhóm 2","round1Score":"0,0","accuracy":"0,0","presentation":false,"creativity":false,"speedBonus":0,"critiqueScore":0},{"id":3,"name":"Nhóm 3","round1Score":"0,0","accuracy":"0,0","presentation":false,"creativity":false,"speedBonus":0,"critiqueScore":0},{"id":4,"name":"Nhóm 4","round1Score":"0,0","accuracy":"0,0","presentation":false,"creativity":false,"speedBonus":0,"critiqueScore":0}];
+        const initialOfflineTitle = "Đường Đua 12A2";
+        const initialOfflineSubtitle = "Nguyễn Trường Sinh";
         
         const calculateTotal = (team) => {
             const parseScore = (value) => { if (value === '' || value === null || value === undefined) return 0; const standardizedValue = String(value).replace(',', '.'); return parseFloat(standardizedValue) || 0; };
@@ -621,7 +109,7 @@ const Scoreboard = () => {
 
           const handleSaveName = () => { if (nameInput.trim()) { updateTeam(team.id, 'name', nameInput); } else { setNameInput(team.name); } setIsEditingName(false); };
           const handleKeyDown = (e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') { setNameInput(team.name); setIsEditingName(false); } };
-          const handleDeleteConfirm = () => { if (window.confirm(\`Bạn có chắc chắn muốn xoá nhóm "\${team.name}" không?\`)) { deleteTeam(team.id); } };
+          const handleDeleteConfirm = () => { if (window.confirm(`Bạn có chắc chắn muốn xoá nhóm "${team.name}" không?`)) { deleteTeam(team.id); } };
           
           return (
             <div className="relative bg-white border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden flex flex-col h-full transform transition hover:-translate-y-1 hover:shadow-xl group/card">
@@ -668,10 +156,10 @@ const Scoreboard = () => {
                         <input type="text" inputMode="decimal" value={team.accuracy} onChange={(e) => handleDecimalInput(team.id, 'accuracy', e.target.value)} className="w-16 p-1 text-center border rounded font-bold text-cyan-800 focus:ring-1 focus:ring-cyan-500" placeholder="0,0" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <label className={\`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none \${team.presentation ? 'bg-green-500 text-white border-green-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}\`}>
+                        <label className={`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none ${team.presentation ? 'bg-green-500 text-white border-green-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
                           <input type="checkbox" className="hidden" checked={team.presentation} onChange={(e) => updateTeam(team.id, 'presentation', e.target.checked)} /> Trình bày (+10)
                         </label>
-                        <label className={\`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none \${team.creativity ? 'bg-purple-500 text-white border-purple-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}\`}>
+                        <label className={`cursor-pointer px-2 py-1.5 rounded border text-xs font-bold text-center transition select-none ${team.creativity ? 'bg-purple-500 text-white border-purple-600 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
                           <input type="checkbox" className="hidden" checked={team.creativity} onChange={(e) => updateTeam(team.id, 'creativity', e.target.checked)} /> Sáng tạo (+10)
                         </label>
                       </div>
@@ -680,7 +168,7 @@ const Scoreboard = () => {
                       <label className="text-xs font-bold text-cyan-700 uppercase block mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Điểm Tốc Độ</label>
                       <div className="flex justify-between gap-1">
                         {[ { val: 10, label: '🥇 10đ', color: 'bg-yellow-400 border-yellow-500' }, { val: 5, label: '🥈 5đ', color: 'bg-gray-400 border-gray-500' }, { val: 3, label: '🥉 3đ', color: 'bg-orange-400 border-orange-500' }, { val: 0, label: '0', color: 'bg-white text-gray-400 border-gray-200' } ].map((opt) => (
-                          <button key={opt.val} onClick={() => updateTeam(team.id, 'speedBonus', opt.val)} className={\`flex-1 py-1 rounded text-[10px] font-bold transition border-b-2 active:border-b-0 active:translate-y-[2px] \${team.speedBonus === opt.val ? \`\${opt.color} text-white shadow-md\` : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-200'}\`}>{opt.label}</button>
+                          <button key={opt.val} onClick={() => updateTeam(team.id, 'speedBonus', opt.val)} className={`flex-1 py-1 rounded text-[10px] font-bold transition border-b-2 active:border-b-0 active:translate-y-[2px] ${team.speedBonus === opt.val ? `${opt.color} text-white shadow-md` : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-200'}`}>{opt.label}</button>
                         ))}
                       </div>
                     </div>
@@ -713,10 +201,10 @@ const Scoreboard = () => {
             useEffect(() => { const loader = document.getElementById('loading'); if (loader) { loader.style.opacity = 0; setTimeout(() => loader.style.display = 'none', 500); } }, []);
             
             const updateTeam = (id, field, value) => { setTeams(teams.map(team => team.id === id ? { ...team, [field]: value } : team)); };
-            const addTeam = () => { const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1; const newTeam = { id: newId, name: \`Nhóm \${newId}\`, round1Score: '0,0', accuracy: '0,0', presentation: false, creativity: false, speedBonus: 0, critiqueScore: 0 }; setTeams([...teams, newTeam]); };
+            const addTeam = () => { const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1; const newTeam = { id: newId, name: `Nhóm ${newId}`, round1Score: '0,0', accuracy: '0,0', presentation: false, creativity: false, speedBonus: 0, critiqueScore: 0 }; setTeams([...teams, newTeam]); };
             const deleteTeam = (id) => { setTeams(teams.filter(t => t.id !== id)); };
             const addCritiquePoints = (id, amount) => { setTeams(teams.map(team => team.id === id ? { ...team, critiqueScore: team.critiqueScore + amount } : team)); };
-            const handleDecimalInput = (id, field, value) => { let formattedValue = value.replace(/\\./g, ','); if (/^\\d*,?\\d*$/.test(formattedValue)) { updateTeam(id, field, formattedValue); } };
+            const handleDecimalInput = (id, field, value) => { let formattedValue = value.replace(/\./g, ','); if (/^\d*,?\d*$/.test(formattedValue)) { updateTeam(id, field, formattedValue); } };
 
             return (
                 <div className="min-h-screen bg-gray-100 p-2 md:p-4 font-sans text-slate-800 relative">
@@ -743,8 +231,8 @@ const Scoreboard = () => {
                           </div>
                         </div>
                         <div className="flex bg-blue-900/30 p-1 rounded-lg backdrop-blur-sm order-3 md:order-2 w-full md:w-auto justify-center md:justify-start">
-                           <button onClick={() => setActiveTab('scoring')} className={\`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none \${activeTab === 'scoring' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}\`}><Grid className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Nhập Điểm</span></button>
-                           <button onClick={() => setActiveTab('ranking')} className={\`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none \${activeTab === 'ranking' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}\`}><Award className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Xếp Hạng</span></button>
+                           <button onClick={() => setActiveTab('scoring')} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none ${activeTab === 'scoring' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}`}><Grid className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Nhập Điểm</span></button>
+                           <button onClick={() => setActiveTab('ranking')} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none ${activeTab === 'ranking' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}`}><Award className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Xếp Hạng</span></button>
                         </div>
                         <div className="flex items-center gap-2 order-2 md:order-3">
                            <button onClick={addTeam} className="flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition shadow-sm border border-blue-400/50 font-bold text-[10px] md:text-xs uppercase tracking-wide" title="Thêm nhóm mới"><Plus className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Thêm Nhóm</span></button>
@@ -759,108 +247,7 @@ const Scoreboard = () => {
             );
         };
         const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<OfflineApp />);
-    <\/script>
+    </script>
 </body>
 </html>
-    `;
-
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bang-diem-${new Date().toISOString().slice(0, 10)}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // --- MAIN RENDER ---
-  return (
-    <div className="min-h-screen bg-gray-100 p-2 md:p-4 font-sans text-slate-800 relative">
-      {/* MODAL RESET (Đã có) */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full border-2 border-red-100">
-             <div className="flex items-center gap-3 mb-4 text-red-600"><AlertCircle className="w-8 h-8" /><h3 className="text-xl font-bold">Xác nhận Reset?</h3></div>
-             <p className="text-gray-600 mb-6 font-medium">Hành động này sẽ xóa toàn bộ điểm số hiện tại về 0. Bạn có chắc chắn không?</p>
-             <div className="flex gap-3"><button onClick={cancelReset} className="flex-1 py-2 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">Hủy bỏ</button><button onClick={confirmReset} className="flex-1 py-2 rounded-lg font-bold text-white bg-red-500 hover:bg-red-600 shadow-md transition transform active:scale-95">Đồng ý Reset</button></div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL XOÁ NHÓM (Mới thêm) */}
-      {teamToDelete && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full border-2 border-red-100">
-             <div className="flex items-center gap-3 mb-4 text-red-600"><Trash2 className="w-8 h-8" /><h3 className="text-xl font-bold">Xoá nhóm?</h3></div>
-             <p className="text-gray-600 mb-6 font-medium">Bạn có chắc chắn muốn xoá vĩnh viễn <strong>{teamToDelete.name}</strong> không? Hành động này không thể hoàn tác.</p>
-             <div className="flex gap-3"><button onClick={cancelDeleteTeam} className="flex-1 py-2 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">Huỷ</button><button onClick={confirmDeleteTeam} className="flex-1 py-2 rounded-lg font-bold text-white bg-red-500 hover:bg-red-600 shadow-md transition transform active:scale-95">Xoá ngay</button></div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto">
-        <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white p-2 md:p-4 rounded-xl shadow-lg mb-6 sticky top-2 z-50 ring-1 ring-white/20">
-          <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-2">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="bg-white/10 p-1.5 md:p-2 rounded-lg backdrop-blur-sm"><Trophy className="w-6 h-6 md:w-8 md:h-8 text-yellow-300" /></div>
-              <div className="flex-1">
-                 {isEditingHeader ? (
-                    <div className="flex flex-col gap-1 w-full max-w-sm animate-fadeIn">
-                        <input value={appTitle} onChange={(e) => setAppTitle(e.target.value)} className="text-gray-900 font-black px-2 py-1 rounded text-sm md:text-base outline-none border-2 border-blue-400 focus:border-blue-500 shadow-inner" placeholder="Tên cuộc thi" autoFocus />
-                        <input value={appSubtitle} onChange={(e) => setAppSubtitle(e.target.value)} className="text-gray-900 font-bold px-2 py-1 rounded text-xs outline-none border-2 border-blue-400 focus:border-blue-500 shadow-inner" placeholder="Tên giáo viên/Lớp" />
-                        <button onClick={() => setIsEditingHeader(false)} className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded self-start mt-1 flex items-center gap-1 shadow-sm"><Check className="w-3 h-3" /> Lưu Lại</button>
-                    </div>
-                 ) : (
-                    <div className="group cursor-pointer hover:bg-white/10 rounded p-1 -ml-1 transition" onClick={() => setIsEditingHeader(true)} title="Bấm để sửa tên">
-                        <h1 className="text-lg md:text-2xl font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200 whitespace-nowrap flex items-center gap-2">
-                            {appTitle} <Edit2 className="w-4 h-4 text-white/50 opacity-0 group-hover:opacity-100 transition" />
-                        </h1>
-                        <div className="flex items-center gap-2 text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-widest"><span>{appSubtitle}</span></div>
-                    </div>
-                 )}
-              </div>
-            </div>
-            <div className="flex bg-blue-900/30 p-1 rounded-lg backdrop-blur-sm order-3 md:order-2 w-full md:w-auto justify-center md:justify-start">
-               <button onClick={() => setActiveTab('scoring')} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none ${activeTab === 'scoring' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}`}><Grid className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Nhập Điểm</span></button>
-               <button onClick={() => setActiveTab('ranking')} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-md font-bold text-xs md:text-sm transition-all flex-1 md:flex-none ${activeTab === 'ranking' ? 'bg-white text-blue-700 shadow-md' : 'text-blue-200 hover:text-white hover:bg-white/10'}`}><Award className="w-3 h-3 md:w-4 md:h-4" /> <span className="whitespace-nowrap">Xếp Hạng</span></button>
-            </div>
-            <div className="flex items-center gap-2 order-2 md:order-3">
-              <button onClick={addTeam} className="flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition shadow-sm border border-blue-400/50 font-bold text-[10px] md:text-xs uppercase tracking-wide" title="Thêm nhóm mới"><Plus className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Thêm Nhóm</span></button>
-              <button onClick={exportOfflineHTML} className="flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition shadow-sm border border-green-400/50 font-bold text-[10px] md:text-xs uppercase tracking-wide" title="Tải về file HTML để chạy offline"><Download className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Xuất web</span></button>
-              <button onClick={handleResetRequest} className="p-1.5 md:p-2 rounded-lg bg-red-500/80 hover:bg-red-600 text-white transition shadow-sm border border-red-400/50" title="Reset điểm"><RefreshCw className="w-4 h-4 md:w-5 md:h-5" /></button>
-            </div>
-          </div>
-        </header>
-
-        <main>
-          {activeTab === 'scoring' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-              {teams.map((team) => (
-                <ScoringCard key={team.id} team={team} updateTeam={updateTeam} addCritiquePoints={addCritiquePoints} handleDecimalInput={handleDecimalInput} onDeleteRequest={handleDeleteRequest} />
-              ))}
-            </div>
-          ) : (
-            <RankingBoard teams={teams} />
-          )}
-        </main>
-      </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shine { 0% { transform: translateX(-150%) skewX(-15deg); } 100% { transform: translateX(150%) skewX(-15deg); } }
-        @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes spinSlowReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
-        .animate-bounce-slow { animation: bounce 3s infinite; }
-        .animate-spin-slow { animation: spinSlow 4s linear infinite; }
-        .animate-spin-slow-reverse { animation: spinSlowReverse 4s linear infinite; }
-        .shimmer-effect-gold { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); width: 80%; height: 100%; position: absolute; top: 0; left: 0; animation: shine 2s infinite; filter: drop-shadow(0 0 5px white); }
-        .shimmer-effect-silver { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent); width: 70%; height: 100%; position: absolute; top: 0; left: 0; animation: shine 2.2s infinite; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)); }
-      `}</style>
-    </div>
-  );
-};
-
-export default Scoreboard;
+    
